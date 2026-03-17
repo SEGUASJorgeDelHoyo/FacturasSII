@@ -23,22 +23,47 @@ function construirPayload(model, method, args = [], kwargs = {}) {
             method: "execute_kw",
             args: [DB, 27, API_KEY, model, method, args, kwargs]
         },
-        id: 1
+        id: 1,
     };
+}
+
+const FETCH_TIMEOUT_MS = 20000;
+
+function fetchWithTimeout(resource, options = {}, timeout = FETCH_TIMEOUT_MS) {
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), timeout);
+  const signal = controller.signal;
+
+  return fetch(resource, { ...options, signal })
+    .finally(() => clearTimeout(id));
 }
 
 async function llamarOdoo(payload) {
   console.log("api", API_URL, payload);
-  const resp = await fetch(API_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", "Accept": "application/json" },
-    body: JSON.stringify(payload),
-  });
+  let resp;
+  try {
+    resp = await fetchWithTimeout(API_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Accept": "application/json" },
+      body: JSON.stringify(payload),
+    });
+  } catch (err) {
+    if (err.name === 'AbortError') {
+      throw new Error(`Timeout: no se obtuvo respuesta de ${API_URL} en ${FETCH_TIMEOUT_MS/1000}s`);
+    }
+    throw err;
+  }
+
   console.log("resp", resp.status, resp.statusText);
   const text = await resp.text();
   console.log("body", text);
-  if (!resp.ok) throw new Error(`HTTP${resp.status}: ${text}`);
-  const json = JSON.parse(text);
+  if (!resp.ok) throw new Error(`HTTP ${resp.status}: ${text}`);
+  let json;
+  try {
+    json = JSON.parse(text);
+  } catch (parseErr) {
+    throw new Error(`Respuesta no JSON: ${text}`);
+  }
   if (json.error) throw new Error(JSON.stringify(json.error));
   return json.result;
 }
@@ -152,3 +177,41 @@ sendBtn.addEventListener("click", async () => {
         showMessage(`Error en la petición: ${err.message || JSON.stringify(err)}`);
     }
 });
+
+const shutdownBtn = document.getElementById("shutdown");
+if (shutdownBtn) {
+    shutdownBtn.addEventListener("click", async () => {
+        try {
+            shutdownBtn.disabled = true;
+            shutdownBtn.textContent = "Deteniendo...";
+            const resp = await fetch("http://localhost:3000/shutdown", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+            });
+            console.log("shutdown response status", resp.status, resp.statusText);
+            const bodyText = await resp.text();
+            console.log("shutdown response body", bodyText);
+            let json;
+            if (bodyText && bodyText.trim()) {
+                try {
+                    json = JSON.parse(bodyText);
+                } catch (parseError) {
+                    console.error("Error parsing shutdown body as JSON", parseError, bodyText);
+                    json = { message: bodyText };
+                }
+            } else {
+                json = { message: 'Servidor apagándose' };
+            }
+            showMessage(`Servidor detenido: ${json.message || "OK"}`, "success");
+            // El servidor ya está apagado, cerrar la ventana si el navegador lo permite
+            setTimeout(() => {
+                window.close(); // puede no funcionara si el tab no fue abierto por JS
+            }, 500);
+        } catch (err) {
+            console.error("Error en shutdown click", err);
+            showMessage(`Error al detener: ${err.message || err}`, "error");
+            shutdownBtn.disabled = false;
+            shutdownBtn.textContent = "Detener servidor";
+        }
+    });
+}

@@ -61,12 +61,16 @@
 </head>
 <body>
     <h1>Buscar Pedido de venta (coincidencia 100%)</h1>
+    <div class="card" style="background:#fff3cd; border-color:#ffeeba; margin-bottom:16px;">
+        <p><strong>Recordatorio:</strong> cuando termines, cierra el navegador y vuelve al terminal donde ejecutaste <code>start_app.bat</code>. Presiona tecla para detener proxy y servidor.</p>
+    </div>
 
     <div id="inputSection" class="card">
         <label for="orderName">Nombre del pedido de venta:</label>
         <input type="text" id="orderName" placeholder="Escriba el nombre exacto del pedido" style="width:100%; padding: 8px; margin-top:6px;" />
         <br/><br/>
         <button id="send">Enviar</button>
+        <button id="shutdown" style="margin-left:12px; background:#dc3545; color:white;">Detener servidor</button>
         <p id="message"></p>
     </div>
 
