@@ -1,0 +1,77 @@
+<!--API KEY: 19b6cb658713bd27dc1f215cef8149fcba1364ba -->
+<!--DB: rapsodoo-odoo-sh-seguas-main-6769149 -->
+
+<!-- peticion API:
+  {
+    "jsonrpc": "2.0",
+    "method": "call",
+    "params": {
+        "service": "object",
+        "method": "execute_kw",
+        "args": [
+            "{{db}}",
+            27,
+            "{{apikey}}",
+            "helpdesk.ticket",
+            "search_read",
+            [[]],
+            {
+                "fields": []
+            }
+        ]
+    },
+    "id": 2
+}-->
+
+<!--Página web para preguntar que Pedido de venta necesitas, lo escibe en el campo de texto (tiene que coincidir 100%, si no coincide que muestre un error diciendo que algo está mal escrito) y que una vez le des al botón de enviar se haga una petición a la API de Odoo en un archivo JS que realice todo el pintado de pantalla y todo, una vez mostrado que haya un botón que cuándo le des se cambie el estado del SII con esta petición API se hace desde Postman {
+    "jsonrpc": "2.0",
+    "method": "call",
+    "params": {
+        "service": "object",
+        "method": "execute_kw",
+        "args": [
+            "{{db}}",
+            27,
+            "{{apikey}}",
+            "helpdesk.ticket",
+            "search_read",
+            [[]],
+            {
+                "fields": []
+            }
+        ]
+    },
+    "id": 2
+}-->
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Facturas SII</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        #inputSection, #resultSection { max-width: 600px; margin-bottom: 18px; }
+        .error { color: #b71c1c; }
+        .success { color: #1b5e20; }
+        .card { border: 1px solid #ccc; border-radius: 6px; padding: 12px; }
+    </style>
+</head>
+<body>
+    <h1>Buscar Pedido de venta (coincidencia 100%)</h1>
+
+    <div id="inputSection" class="card">
+        <label for="orderName">Nombre del pedido de venta:</label>
+        <input type="text" id="orderName" placeholder="Escriba el nombre exacto del pedido" style="width:100%; padding: 8px; margin-top:6px;" />
+        <br/><br/>
+        <button id="send">Enviar</button>
+        <p id="message"></p>
+    </div>
+
+    <div id="resultSection"></div>
+
+    <script src="JSapi.js"></script>
+</body>
+</html>
