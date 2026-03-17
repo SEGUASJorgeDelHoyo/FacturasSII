@@ -1,6 +1,9 @@
-const API_URL = "https://rapsodoo-odoo-sh-seguas.odoo.com/jsonrpc"; // Cambia por la URL de tu Odoo con /jsonrpc
-const DB = "rapsodoo-odoo-sh-seguas-main-6769149"; // Ajusta tu DB real
-const API_KEY = "19b6cb658713bd27dc1f215cef8149fcba1364ba"; // Ajusta tu API Key real
+// En producción se recomienda que el frontend no llame directamente a Odoo (CORS),
+// sino a tu propio proxy backend.
+// Esta URL asume que el proxy corre en http://localhost:3000 y reenvía a Odoo.
+const API_URL = "http://localhost:3000/odoo-jsonrpc";
+const DB = "rapsodoo-odoo-sh-seguas-main-6769149";
+const API_KEY = "19b6cb658713bd27dc1f215cef8149fcba1364ba";
 
 const messageEl = document.getElementById("message");
 const resultSection = document.getElementById("resultSection");
@@ -20,37 +23,66 @@ function construirPayload(model, method, args = [], kwargs = {}) {
             method: "execute_kw",
             args: [DB, 27, API_KEY, model, method, args, kwargs]
         },
-        id: new Date().getTime()
+        id: 1
     };
 }
 
 async function llamarOdoo(payload) {
-    const resp = await fetch(API_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
-    });
-    const json = await resp.json();
-    if (json.error) throw new Error(JSON.stringify(json.error));
-    return json.result;
+  console.log("api", API_URL, payload);
+  const resp = await fetch(API_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "Accept": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  console.log("resp", resp.status, resp.statusText);
+  const text = await resp.text();
+  console.log("body", text);
+  if (!resp.ok) throw new Error(`HTTP${resp.status}: ${text}`);
+  const json = JSON.parse(text);
+  if (json.error) throw new Error(JSON.stringify(json.error));
+  return json.result;
 }
 
 async function buscarPedidoPorNombre(nombrePedido) {
     // Búsqueda de facturas proveedor (contabilidad > proveedores > facturas) por nombre exacto
-    const payloadSearch = construirPayload("account.move", "search_read", [[[
-        ["type", "=", "in_invoice"],
-        ["name", "=", nombrePedido]
-    ]]], {fields: ["id", "name", "invoice_date", "partner_id", "state", "amount_total"]});
-    const resultado = await llamarOdoo(payloadSearch);
-    return resultado;
+    const domain = [["move_type", "=", "in_invoice"], ["name", "=", nombrePedido]];
+    const payloadExact = construirPayload("account.move", "search_read", [domain], {fields: ["id", "name", "invoice_date", "partner_id", "sii_state", "amount_total"]});
+    console.log("payloadExact", payloadExact);
+
+    const exacto = await llamarOdoo(payloadExact);
+    if (exacto && exacto.length > 0) {
+        return { exacto, coincidencias: [] };
+    }
+
+    // Fallback para ayudar con datos similares (ilike): útil para ver si efectivamente la factura está con un formato distinto
+    const domainSimilar = [["move_type", "=", "in_invoice"], ["name", "ilike", nombrePedido]];
+    const payloadSimilar = construirPayload("account.move", "search_read", [domainSimilar], {fields: ["id", "name", "invoice_date", "partner_id", "sii_state", "amount_total"], limit: 20});
+
+    const coincidencias = await llamarOdoo(payloadSimilar);
+    return { exacto: [], coincidencias };
 }
 
 async function actualizarEstadoSII(orderId) {
     // Cambia el estado SII en factura proveedor; ajusta el campo si es diferente
-    const newState = "sii_enviado";
-    const payloadWrite = construirPayload("account.move", "write", [[orderId], {"x_sii_state": newState}]);
-    const ok = await llamarOdoo(payloadWrite);
-    return ok;
+    const newState = "sent";
+    const candidateFields = ["x_sii_state", "l10n_es_aeat_sii_state", "sii_state"];
+
+    for (const field of candidateFields) {
+        try {
+            const payloadWrite = construirPayload("account.move", "write", [[orderId], {[field]: newState}]);
+            const ok = await llamarOdoo(payloadWrite);
+            return { field, ok };
+        } catch (err) {
+            const text = (err.message || "").toLowerCase();
+            if (!text.includes(field.toLowerCase())) {
+                // Error no relacionado con el campo, propagarlo.
+                throw err;
+            }
+            // Si es KeyError o campo inválido, probar siguiente campo.
+        }
+    }
+
+    throw new Error(`No se encontró campo válido de estado SII en account.move (${candidateFields.join(", ")})`);
 }
 
 async function pintarPedido(pedido) {
@@ -62,7 +94,7 @@ async function pintarPedido(pedido) {
             <p>Fecha: ${pedido.invoice_date || "-"}</p>
             <p>Proveedor: ${pedido.partner_id ? pedido.partner_id[1] : "-"}</p>
             <p>Total: ${pedido.amount_total || "-"}</p>
-            <p>Estado: ${pedido.state || "-"}</p>
+            <p>Estado: ${pedido.sii_state || "-"}</p>
             <button id="cambiarEstadoBtn">Cambiar estado SII</button>
             <div id="statusChangeMessage"></div>
         </div>
@@ -75,8 +107,8 @@ async function pintarPedido(pedido) {
             btnCambio.disabled = true;
             const statusMsg = document.getElementById("statusChangeMessage");
             statusMsg.textContent = "Actualizando estado SII...";
-            await actualizarEstadoSII(pedido.id);
-            statusMsg.textContent = "Estado SII actualizado correctamente.";
+            const result = await actualizarEstadoSII(pedido.id);
+            statusMsg.textContent = `Estado SII actualizado correctamente.`;
             statusMsg.className = "success";
             showMessage("", "");
         } catch (err) {
@@ -97,18 +129,25 @@ sendBtn.addEventListener("click", async () => {
     showMessage("Buscando factura proveedor...", "success");
 
     try {
-        const pedidos = await buscarPedidoPorNombre(orderName);
-        if (!pedidos || pedidos.length === 0) {
+        const { exacto, coincidencias } = await buscarPedidoPorNombre(orderName);
+
+        if ((!exacto || exacto.length === 0) && (!coincidencias || coincidencias.length === 0)) {
             showMessage("No se encontró ninguna factura con ese nombre exacto.");
             return;
         }
-        if (pedidos.length > 1) {
-            showMessage("Se encontraron varias facturas con ese nombre exacto; revisar en Odoo.");
-        } else {
+
+        if (exacto && exacto.length > 0) {
             showMessage("Factura proveedor encontrada.", "success");
+            await pintarPedido(exacto[0]);
+            return;
         }
 
-        await pintarPedido(pedidos[0]);
+        if (coincidencias && coincidencias.length > 0) {
+            showMessage("No hay coincidencia exacta. Sin embargo, se encontraron facturas similares:");
+            const lista = coincidencias.map(f => `ID=${f.id} Name=${f.name}`).join("\n");
+            resultSection.innerHTML = `<div class='card'><h3>Facturas similares</h3><pre>${lista}</pre></div>`;
+            return;
+        }
     } catch (err) {
         showMessage(`Error en la petición: ${err.message || JSON.stringify(err)}`);
     }
