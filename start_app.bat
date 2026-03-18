@@ -1,14 +1,22 @@
 @echo off
-setlocal
-cd /d %~dp0
+title Herramienta SII Odoo
+cd /d "%~dp0"
 
-echo Iniciando proxy...
+echo Iniciando servidor interno...
+:: Iniciamos el proxy de Python en segundo plano
 start /B "" python proxy.py > proxy.log 2>&1
 
-echo Abriendo navegador...
-start "" "chrome.exe" "http://localhost:3000/MainPage.html"
+:: Damos 2 segundos para asegurar que el servidor esta escuchando
+timeout /t 2 > nul
 
-echo Esperando a que el servidor se apague (boton Detener servidor en la web)...
+echo Abriendo aplicacion...
+:: Usamos Chrome en modo APP para que parezca un programa nativo y permita usar window.close()
+start chrome --app="http://localhost:3000/MainPage.html"
+
+echo El servidor esta en ejecucion.
+echo Por favor, usa el boton "Detener servidor" en la aplicacion para cerrar todo.
+
+:: Bucle para comprobar si el puerto 3000 sigue activo
 :WAIT_LOOP
 powershell -NoProfile -Command "try { $c = New-Object System.Net.Sockets.TcpClient; $c.Connect('127.0.0.1',3000); $c.Close(); exit 1 } catch { exit 0 }"
 if %ERRORLEVEL% equ 1 (
@@ -16,8 +24,5 @@ if %ERRORLEVEL% equ 1 (
     goto WAIT_LOOP
 )
 
-echo Servidor ya no responde en 3000. Limpiando procesos Python...
-taskkill /f /im python.exe >nul 2>&1
-echo Listo, app detenida. Esta ventana se cierra en 2 segundos...
-timeout /t 2 > nul
+:: Cuando el proxy se cierra (por la peticion /shutdown), el script llega aqui y se auto-cierra
 exit
