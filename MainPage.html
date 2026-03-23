@@ -1,80 +1,112 @@
-<!--API KEY: 19b6cb658713bd27dc1f215cef8149fcba1364ba -->
-<!--DB: rapsodoo-odoo-sh-seguas-main-6769149 -->
-
-<!-- peticion API:
-  {
-    "jsonrpc": "2.0",
-    "method": "call",
-    "params": {
-        "service": "object",
-        "method": "execute_kw",
-        "args": [
-            "{{db}}",
-            27,
-            "{{apikey}}",
-            "helpdesk.ticket",
-            "search_read",
-            [[]],
-            {
-                "fields": []
-            }
-        ]
-    },
-    "id": 2
-}-->
-
-<!--Página web para preguntar que Pedido de venta necesitas, lo escibe en el campo de texto (tiene que coincidir 100%, si no coincide que muestre un error diciendo que algo está mal escrito) y que una vez le des al botón de enviar se haga una petición a la API de Odoo en un archivo JS que realice todo el pintado de pantalla y todo, una vez mostrado que haya un botón que cuándo le des se cambie el estado del SII con esta petición API se hace desde Postman {
-    "jsonrpc": "2.0",
-    "method": "call",
-    "params": {
-        "service": "object",
-        "method": "execute_kw",
-        "args": [
-            "{{db}}",
-            27,
-            "{{apikey}}",
-            "helpdesk.ticket",
-            "search_read",
-            [[]],
-            {
-                "fields": []
-            }
-        ]
-    },
-    "id": 2
-}-->
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Facturas SII</title>
+    <title>SEGUAS - Gestión SII</title>
     <style>
-        body { font-family: Arial, sans-serif; margin: 20px; }
-        #inputSection, #resultSection { max-width: 600px; margin-bottom: 18px; }
-        .error { color: #b71c1c; }
-        .success { color: #1b5e20; }
-        .card { border: 1px solid #ccc; border-radius: 6px; padding: 12px; }
+        :root {
+            --seguas-blue: #005492;
+            --seguas-dark: #333333;
+            --odoo-bg: #f0f2f5;
+            --success: #28a745;
+            --danger: #dc3545;
+        }
+
+        body { 
+            font-family: 'Segoe UI', Arial, sans-serif; 
+            background-color: var(--odoo-bg);
+            margin: 0; padding: 40px 20px;
+            display: flex; flex-direction: column; align-items: center;
+        }
+
+        .header-logo {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .logo-placeholder {
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: var(--seguas-blue);
+            letter-spacing: -1px;
+        }
+
+        .container { width: 100%; max-width: 700px; }
+
+        .card { 
+            background: white; 
+            border-radius: 8px; 
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            padding: 25px; margin-bottom: 20px;
+            border-top: 5px solid var(--seguas-blue);
+        }
+
+        h1 { 
+            color: var(--seguas-dark); 
+            font-size: 1.4rem; margin-top: 0; 
+            border-bottom: 1px solid #eee; padding-bottom: 10px;
+        }
+
+        label { display: block; margin-bottom: 8px; font-weight: 600; color: #555; }
+
+        input[type="text"] {
+            width: 100%; padding: 12px; border: 1px solid #ccc;
+            border-radius: 4px; box-sizing: border-box; font-size: 1rem;
+        }
+
+        .btn-group { display: flex; gap: 10px; margin-top: 20px; }
+
+        button { 
+            flex: 1; padding: 12px; border: none; border-radius: 4px; 
+            font-weight: bold; cursor: pointer; transition: 0.2s;
+        }
+
+        #send { background: var(--seguas-blue); color: white; }
+        #send:hover { background: #004070; }
+
+        #shutdown { background: #f8f9fa; color: #666; border: 1px solid #ddd; }
+        #shutdown:hover { background: #e2e6ea; color: var(--danger); }
+
+        .invoice-grid {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 15px;
+            background: #fdfdfd; padding: 15px; border-radius: 6px; border: 1px solid #eee;
+        }
+        .field-label { font-size: 0.75rem; color: #888; text-transform: uppercase; margin-bottom: 2px; }
+        .field-value { font-size: 1rem; font-weight: 500; color: var(--seguas-dark); }
+        .price { color: var(--seguas-blue); font-weight: 700; font-size: 1.2rem; }
+
+        .status-badge {
+            display: inline-block; padding: 4px 12px; border-radius: 15px;
+            background: #e1f5fe; color: #01579b; font-size: 0.85rem; font-weight: 600;
+        }
+
+        #message { margin-top: 15px; padding: 10px; border-radius: 4px; text-align: center; display: none; }
+        .success { display: block !important; background: #d4edda; color: #155724; }
+        .error { display: block !important; background: #f8d7da; color: #721c24; }
     </style>
 </head>
 <body>
-    <h1>Buscar Pedido de venta (coincidencia 100%)</h1>
-    <div class="card" style="background:#fff3cd; border-color:#ffeeba; margin-bottom:16px;">
-        <p><strong>Recordatorio:</strong> cuando termines, cierra el navegador y vuelve al terminal donde ejecutaste <code>start_app.bat</code>. Presiona tecla para detener proxy y servidor.</p>
+    <div class="header-logo">
+        <div class="logo-placeholder">SEGUAS</div>
     </div>
 
-    <div id="inputSection" class="card">
-        <label for="orderName">Nombre del pedido de venta:</label>
-        <input type="text" id="orderName" placeholder="Escriba el nombre exacto del pedido" style="width:100%; padding: 8px; margin-top:6px;" />
-        <br/><br/>
-        <button id="send">Enviar</button>
-        <button id="shutdown" style="margin-left:12px; background:#dc3545; color:white;">Detener servidor</button>
-        <p id="message"></p>
-    </div>
+    <div class="container">
+        <div class="card">
+            <h1>Buscador de Facturas Proveedor</h1>
+            <label>Referencia de Factura (Odoo):</label>
+            <input type="text" id="orderName" placeholder="Ej: BILL/2026/03/0001">
+            
+            <div class="btn-group">
+                <button id="send">BUSCAR EN ODOO</button>
+                <button id="shutdown">Cerrar Aplicación</button>
+            </div>
+            <div id="message"></div>
+        </div>
 
-    <div id="resultSection"></div>
+        <div id="resultSection"></div>
+    </div>
 
     <script src="JSapi.js"></script>
 </body>
