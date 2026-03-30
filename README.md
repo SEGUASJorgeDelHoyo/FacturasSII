@@ -54,12 +54,12 @@ La aplicación consta de una interfaz web intuitiva (HTML/CSS/JS) y un servidor 
 
 ## 📊 Logs
 
-Todas las operaciones (consultas y modificaciones) se registran en `logs/odoo_actions.log` con formato:
+Todas las operaciones (consultas y modificaciones) se registran en `logs/odoo_actions_YYYY-MM.log` con formato:
 ```
 [2026-03-23 12:00:00] action=consult model=account.move ID=123 Name=Factura001
 [2026-03-23 12:01:00] action=modify model=account.move ID=123 Name=Factura001
 ```
-- **Ubicación:** `FacturasSII/logs/odoo_actions.log`
+- **Ubicación:** `FacturasSII/logs/odoo_actions_2026-03.log` (un archivo por mes)
 - **Propósito:** Auditoría de acciones realizadas, con ID y nombre de cada factura consultada o modificada.
 
 ## 📁 Estructura del Proyecto

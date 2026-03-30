@@ -25,7 +25,7 @@ class ProxyHandler(SimpleHTTPRequestHandler):
     def _escribir_log(self, texto):
         ruta_logs = os.path.join(os.path.dirname(os.path.abspath(__file__)), "logs")
         os.makedirs(ruta_logs, exist_ok=True)
-        archivo = os.path.join(ruta_logs, "odoo_actions.log")
+        archivo = os.path.join(ruta_logs, f"odoo_actions_{time.strftime('%Y-%m', time.localtime())}.log")
         timestamp = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
         with open(archivo, "a", encoding="utf-8") as f:
             f.write(f"[{timestamp}] {texto}\n")
