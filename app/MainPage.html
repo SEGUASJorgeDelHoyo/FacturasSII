@@ -66,9 +66,16 @@
         #send { background: var(--seguas-blue); color: white; }
         #send:hover { background: #004070; }
 
-        #shutdown { background: #f8f9fa; color: #666; border: 1px solid #ddd; }
-        #shutdown:hover { background: #e2e6ea; color: var(--danger); }
+        #shutdown { 
+            background: var(--danger); 
+            color: white; 
+            border: none;
+        }
 
+        #shutdown:hover { 
+            background: #bb2d3b;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
         .invoice-grid {
             display: grid; grid-template-columns: 1fr 1fr; gap: 15px;
             background: #fdfdfd; padding: 15px; border-radius: 6px; border: 1px solid #eee;

@@ -1,8 +1,8 @@
 Proxy Odoo + server web escuchando en http://localhost:3000
-127.0.0.1 - - [30/Mar/2026 08:15:51] "POST /odoo-jsonrpc HTTP/1.1" 200 -
-127.0.0.1 - - [30/Mar/2026 08:15:57] "POST /odoo-jsonrpc HTTP/1.1" 200 -
-127.0.0.1 - - [30/Mar/2026 08:16:00] "POST /odoo-jsonrpc HTTP/1.1" 200 -
-127.0.0.1 - - [30/Mar/2026 08:16:00] "POST /odoo-jsonrpc HTTP/1.1" 200 -
-127.0.0.1 - - [30/Mar/2026 08:16:00] "POST /odoo-jsonrpc HTTP/1.1" 200 -
-127.0.0.1 - - [30/Mar/2026 08:16:00] "POST /odoo-jsonrpc HTTP/1.1" 200 -
-127.0.0.1 - - [30/Mar/2026 08:16:06] "POST /shutdown HTTP/1.1" 200 -
+127.0.0.1 - - [30/Mar/2026 10:23:20] "GET /MainPage.html HTTP/1.1" 304 -
+127.0.0.1 - - [30/Mar/2026 10:23:32] "POST /odoo-jsonrpc HTTP/1.1" 200 -
+127.0.0.1 - - [30/Mar/2026 10:23:34] "POST /odoo-jsonrpc HTTP/1.1" 200 -
+127.0.0.1 - - [30/Mar/2026 10:23:35] "POST /odoo-jsonrpc HTTP/1.1" 200 -
+127.0.0.1 - - [30/Mar/2026 10:23:35] "POST /odoo-jsonrpc HTTP/1.1" 200 -
+127.0.0.1 - - [30/Mar/2026 10:23:35] "POST /odoo-jsonrpc HTTP/1.1" 200 -
+127.0.0.1 - - [30/Mar/2026 10:23:38] "POST /shutdown HTTP/1.1" 200 -
