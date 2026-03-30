@@ -66,13 +66,17 @@ Todas las operaciones (consultas y modificaciones) se registran en `logs/odoo_ac
 
 ```
 FacturasSII/
-├── JSapi.js          # Lógica JavaScript para la interfaz y llamadas a Odoo
-├── MainPage.html     # Interfaz web principal
-├── proxy.py          # Servidor proxy en Python para manejar requests a Odoo
-├── start_app.bat     # Script para iniciar la aplicación en Windows
-├── README.md         # Este archivo
-└── logs/             # Carpeta generada automáticamente para logs
-    └── odoo_actions.log
+├── app/
+│   ├── JSapi.js          # Lógica JavaScript para la interfaz y llamadas a Odoo
+│   ├── MainPage.html     # Interfaz web principal
+│   ├── proxy.py          # Servidor proxy en Python para manejar requests a Odoo
+│   ├── start_app.bat     # Script para iniciar la aplicación en Windows
+│   ├── logs/             # Carpeta generada automáticamente para logs
+│   └── proxy.log         # Registro del inicio del servidor
+├── start_app.bat         # Lanzador desde la raíz del proyecto
+├── MANUAL_USUARIO.md     # Manual de usuario final
+├── README.md             # Este archivo
+└── __pycache__/          # Caché de Python
 ```
 
 ## ⚠️ Solución de Problemas
